@@ -2,7 +2,9 @@
  const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const redis = require("redis");
-const {Kafka} = require("kafkajs");
+const { startKafka } = require("../utils/kafka-function");
+const { mapData } = require("../utils/map-data");
+
 
 
 const key = "userlist";
@@ -21,13 +23,6 @@ const startRedis = async(err) => {
 startRedis();
 
 
-const brokers = ["localhost:9092"];
-const topic = "my-enter"
-const clientId = "Himanshu1"
-
-const kafka = new Kafka({brokers,clientId})
-const producer = kafka.producer();
-
 
 
  exports.signup = async(req,res) => {
@@ -39,36 +34,15 @@ const producer = kafka.producer();
     }
     const createUser = await User.create(userObj);
 
-    const response = {
-        id : createUser.id,
-        name : createUser.name,
-        email : createUser.email,
-        createdAt : createUser.createdAt,
-        updatedAt : createUser.updatedAt
-    }
+    const response = mapData(createUser);
 
     tempArr.push(response);
     // console.log(tempArr);
     await client.hSet(key,field,JSON.stringify(tempArr));
     console.log("added data in redis");
 
-
-    const startKafka = async() => {
-
-    await producer.connect();
-    await producer.send({
-      topic,
-      messages : [{
-       value : `a new user with 
-       id : ${createUser.id},
-       name : ${createUser.name},
-       email : ${createUser.email}
-                  signed up` 
-        }]
-    })
-
-    }
-    startKafka();
+    let msg = `new user created`
+    startKafka(msg,response);
 
     res.status(201).send(response); 
 
@@ -104,20 +78,8 @@ const producer = kafka.producer();
         accessToken : token
     }
 
-  const startKafka = async() => {
-  await producer.connect();
-  await producer.send({
-    topic,
-    messages : [{
-        value : `user signed in 
-        id : ${response.id},
-        name : ${response.name},
-        email : ${response.email} ` 
-    }]
-  })
-  }
-
-  startKafka();
+    let msg = `new user signed in`
+    startKafka(msg,response);
 
     res.status(200).send(response);
     }catch(err){
@@ -160,27 +122,12 @@ const producer = kafka.producer();
 
       else{
         user = await User.findAll();
-        // await client.hSet(key,field,JSON.stringify(user));
-        // console.log(`set data in redis`);
+         await client.hSet(key,field,JSON.stringify(user));
+         console.log(`set data in redis`);
       }
 
-      const startKafka = async() => {
-      await producer.connect(); 
-      await producer.send({ 
-        topic,
-        messages : [{
-            value : `search data ${JSON.stringify(user.map((users) => {
-                return {
-                    id : users.id,
-                    name : users.name,
-                    email : users.email
-                
-                }
-            }))}`
-        }]
-      })
-      }
-      startKafka()
+      let msg = `find call is responded with`
+      startKafka(msg,response);
 
         res.status(200).send(user.map((users) => {
            return {
@@ -204,15 +151,13 @@ const producer = kafka.producer();
             id : req.params.id
         }
     });
-    res.status(200).send({
-    
-         id : user.id,
-         name : user.name,
-         email : user.email,
-         createdAt : user.createdAt,
-         updatedAt : user.updatedAt,
 
-        });
+    const response = mapData(user);
+
+    let msg = `find by id call is responded with`
+      startKafka(msg,response);
+
+    res.status(200).send(response);
 }catch(err){
     res.status(500).send("error while finding by id", err)
 }
@@ -233,28 +178,12 @@ const producer = kafka.producer();
 
     await user.save(); 
 
-    const startKafka = async() => {
-    await producer.connect();
-    await producer.send({
-        topic,
-        messages : [{
-            value : ` user 
-            id : ${user.id},
-            name : ${user.name},
-            email : ${user.email}
-             updated info`
-        }]
-    })
-    }
-    startKafka()
+    const response = mapData(user);
 
-    return res.status(201).send({
-        id : user.id,
-        name : user.name,
-        email : user.email,
-        createdAt : user.createdAt,
-        updatedAt : user.updatedAt,
-    }); 
+    let msg = `user updated his data`
+    startKafka(msg,response);
+
+    return res.status(201).send(response); 
 
 }catch(err){
     res.status(500).send("error while updating",err)
@@ -272,23 +201,9 @@ const producer = kafka.producer();
     //         }
     //     });
 
-        const startKafka = async() => {
-            await producer.connect();
-            await producer.send({
-                topic,
-                messages : [{
-                    value : `user with
-                    id : ${user.id} 
-                    name : ${user.name},
-                    email : ${user.email}
-                    deleted account`
-                }]
-            }) 
-            }
-            startKafka()
-
-            await user.destroy();
-
+    let msg = `user deleted his data`
+      startKafka(msg,user);
+     await user.destroy();
         res.status(200).send("user is deleted successfully");
 
     }catch(err){
