@@ -5,8 +5,6 @@ const redis = require("redis");
 const { startKafka } = require("../utils/kafka-function");
 const { mapData } = require("../utils/map-data");
 
-
-
 const key = "userlist";
 const field = "userfield";
 let tempArr = [];
@@ -21,8 +19,6 @@ const startRedis = async(err) => {
     console.log("redis connected successfully");
 } 
 startRedis();
-
-
 
 
  exports.signup = async(req,res) => {
@@ -51,6 +47,7 @@ startRedis();
     res.status(500).send("error while signup",err);
 }
  }
+
 
  exports.signin = async(req,res) => {
     try{
@@ -87,6 +84,7 @@ startRedis();
     }
 
  }
+
 
  exports.findData = async(req,res) => {
     try{
@@ -144,6 +142,7 @@ startRedis();
  }
  }
 
+
  exports.findById = async(req,res) => {
     try{
     const user = await User.findOne({
@@ -162,6 +161,7 @@ startRedis();
     res.status(500).send("error while finding by id", err)
 }
  }
+
 
  exports.updateData = async(req,res) => {
     try{
@@ -190,6 +190,7 @@ startRedis();
 }
  }
 
+ 
  exports.deleteData = async(req,res) => {
     try{
         const user = await User.findOne({where : {
