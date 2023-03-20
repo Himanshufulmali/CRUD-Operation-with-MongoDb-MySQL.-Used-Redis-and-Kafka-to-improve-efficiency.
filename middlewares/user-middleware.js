@@ -57,3 +57,35 @@ exports.signinMw = async(req,res,next) => {
     res.status(500).send(`error in signinMw ${err}`);
 }
 }
+
+exports.verifyJwtTokenForGetCall = async(req,res,next) => {
+   
+    try{
+
+         const user = await User.findOne({where :{email : req.body.email}});
+
+        const token = req.headers['access-token'];
+        if(!token){
+           return res.status(403).send(`token is not provided, please provide it`);
+        }
+
+        jwt.verify(token,process.env.secret, (err,decoded) => {
+            if(err){
+               return res.status(401).send(`token is not valid, please recheck it`);
+            }
+
+            req.email = decoded.id; 
+
+            if(req.email !== user.email){
+                return res.status(403).send(`only registered user can perform this action`);
+            }
+
+        }) 
+        next(); 
+
+    }catch(err){
+        res.status(500).send(`error in verifyJwtTokenForFindCall ${err}`);
+        console.log(`err in verifyJwtToken ${err}`);
+    }
+
+}
