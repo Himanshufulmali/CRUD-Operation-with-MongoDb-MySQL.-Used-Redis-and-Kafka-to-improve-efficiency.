@@ -1,3 +1,2 @@
 # CRUD Operation
-Used Express, Kafka, Redis, Mongoose
-Just an experiment.
+Used Express, Kafka, Redis, Mongoose.
